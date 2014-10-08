@@ -10,6 +10,8 @@ namespace SudokuSolver
         public static Stopwatch sw = new Stopwatch();
         public static int depth = 0;
         private enum state { SOLVED, VALID, BAD };
+        private List<Grid>[] gridToBlock = new List<Grid>[9];
+        
         class Grid
         {
             private int mValue;
@@ -62,13 +64,6 @@ namespace SudokuSolver
                 this.mPossibleValues = new List<int>(l);
             }
 
-            public void RemovePossibilty(int n)
-            {
-                //if (this.mPossibleValues.Contains(n))
-                //{
-                    this.mPossibleValues.Remove(n);
-                //}
-            }
         }
 
         private Grid[,] grids = new Grid[9, 9];
@@ -76,38 +71,33 @@ namespace SudokuSolver
         public Board()
         {
             for (int i = 0; i < 9; i++)
-                for (int j = 0; j < 9; j++)
-                    this.grids[i, j] = new Grid(i, j);
-        }
-                
-        /*private void SetGridAndUpdateList(int x, int y, int value)
-        //set the value of spesific grid and remove that value from the legal possibilities of all other
-        //grids at the same row, column and block.
-        {
-            Grid currentGrid = grids[x, y];
-            currentGrid.Value = value;
-            foreach (Grid g in this.grids)
             {
-                if (((g.Col == currentGrid.Col) || (g.Row == currentGrid.Row) || (g.Block == currentGrid.Block)) && (g.possibleValues.Contains(currentGrid.Value)))
+                gridToBlock[i] = new List<Grid>();
+            }
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++)
                 {
-                    g.RemovePossibilty(currentGrid.Value);
+                    this.grids[i, j] = new Grid(i, j);
+                    gridToBlock[grids[i, j].Block].Add(grids[i, j]);
                 }
             }
-        }*/
-
+        }
+                
         private Board SetGridAndUpdateList(int x, int y, int value)
         //set the value of spesific grid and remove that value from the legal possibilities of all other
         //grids at the same row, column and block.
         {
-            Grid currentGrid = grids[x, y];
-            currentGrid.Value = value;
-            foreach (Grid g in this.grids)
+            grids[x, y].Value = value;
+            for (int i = 0; i < 9; i++)
             {
-                if (((g.Col == currentGrid.Col) || (g.Row == currentGrid.Row) || (g.Block == currentGrid.Block)) && (g.possibleValues.Contains(currentGrid.Value)))
-                {
-                    g.RemovePossibilty(currentGrid.Value);
-                }
-            }
+                //if (this.grids[x, i].possibleValues.Contains(value))
+                    grids[x, i].possibleValues.Remove(value);
+                //if (this.grids[i, y].possibleValues.Contains(value))
+                    grids[i, y].possibleValues.Remove(value);
+                //if (this.gridToBlock[grids[x, y].Block][i].possibleValues.Contains(value))
+                    gridToBlock[grids[x, y].Block][i].possibleValues.Remove(value);
+            }     
             return this;
         }
 
@@ -142,8 +132,7 @@ namespace SudokuSolver
                 sb.Append(verticalBar);
                 for (int j = 1; j <= 9; j++)
                 {
-                    sb.Append(this.grids[i - 1, j - 1].Value.ToString());
-                    sb.Append(" ");
+                    sb.Append(this.grids[i - 1, j - 1].Value.ToString() + " ");
                     if (j % 3 == 0)
                     {
                         sb.Append(verticalBar);
@@ -268,14 +257,6 @@ namespace SudokuSolver
             int row = 0;
             int col = 0;
             Grid minGrid = new Grid(-1, -1);
-            /*for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    Console.Write("{0} {1} - {2}|", i, j, grids[i, j].possibleValues.Count);
-                }
-                Console.WriteLine("\n-----------------------------------------------------------------------");
-            }*/
             foreach (Grid g in this.grids)
             {              
                 //col = g.Col;
@@ -327,35 +308,7 @@ namespace SudokuSolver
                 }
             }   
         }
-
-        /*public Board Solve(Board b)
-        {
-            //b = b.GridsWithOnlyOnePossibility();
-            if (b.State == state.SOLVED)
-            {
-                Console.WriteLine("DONE!\n" + b.ToString());
-                Console.WriteLine(depth);
-            }
-            else
-            {
-                Grid g = minList();
-                if ((g.Col == -1) || (b.State==state.BAD))
-                {
-                    //Console.WriteLine("Stuck!");
-                    //Console.WriteLine(b.ToString());
-                    return b;
-                }
-                foreach (int possibleValue in g.possibleValues)     //state is VALID
-                {
-                    Board newBoard = Board.Copy(b);//.SetGridAndUpdateList(g.Row, g.Col, possibleValue));  //Board.Copy(b);
-                    newBoard.SetGridAndUpdateList(g.Row, g.Col, possibleValue);
-                    newBoard = newBoard.GridsWithOnlyOnePossibility();//////////
-                    newBoard.Solve(newBoard);
-                }
-            }
-            depth++;
-            return b;
-        }*/
+       
         public bool Solve(Board b)
         {
             depth++;
@@ -363,10 +316,10 @@ namespace SudokuSolver
             if (b.State == state.SOLVED)
             {
                 Console.WriteLine("DONE!\n" + b.ToString());
-                sw.Stop();
+                //sw.Stop();
                 Console.WriteLine("depth - {0}",depth);
-                Console.WriteLine("time - {0}mSEC", sw.ElapsedMilliseconds);
-                Environment.Exit(0);
+                //Console.WriteLine("time - {0}mSEC", sw.ElapsedMilliseconds);
+                //Environment.Exit(0);
                 return true;
             }
             else
@@ -378,13 +331,13 @@ namespace SudokuSolver
                 }
                 foreach (int possibleValue in g.possibleValues)     //state is VALID
                 {
-                    Board newBoard = Board.Copy(b);//.SetGridAndUpdateList(g.Row, g.Col, possibleValue));  //Board.Copy(b);
+                    Board newBoard = Board.Copy(b);
                     newBoard.SetGridAndUpdateList(g.Row, g.Col, possibleValue);
                     newBoard.GridsWithOnlyOnePossibility();//////////
-                    if (newBoard.Solve(newBoard) == true) break;
-                    //b.SetGridAndUpdateList(g.Row, g.Col, possibleValue);
-                    //b.GridsWithOnlyOnePossibility();//////////
-                    //b.Solve(b);
+                    if (newBoard.Solve(newBoard) == true)
+                    {
+                        break;
+                    }
                 }
             }
             return false;
@@ -413,10 +366,10 @@ namespace SudokuSolver
             //string sudoku = "000000012008030000000000040120500000000004700060000000507000300000620000000100000";//Vaste's #5. Depth - 4702 (2623,9409,4703mS)
             //string sudoku = "000000012040050000000009000070600400000100000000000050000087500601000300200000000";//Vaste's #6. Depth - 516
             //string sudoku = "000000012050400000000000030700600400001000000000080000920000800000510700000003000";//Vaste's #7. Depth - 5533
-            //string sudoku = "000000012300000060000040000900000500000001070020000000000350400001400800060000000";//Vaste's #8. Depth - 11997 (was 33940)
-            string sudoku = "000000012400090000000000050070200000600000400000108000018000000000030700502000000";//Vaste's #9. Depth - 2097
+            string sudoku = "000000012300000060000040000900000500000001070020000000000350400001400800060000000";//Vaste's #8. Depth - 11997 (was 33940)
+            //string sudoku = "000000012400090000000000050070200000600000400000108000018000000000030700502000000";//Vaste's #9. Depth - 2097
             //string sudoku = "000000012500008000000700000600120000700000450000030000030000800000500700020000000";//Vaste's #10. Depth - 269
-            //string sudoku = "000100038200005000000000000050000400400030000000700006001000050000060200060004000";//Vaste's #11. Depth - 725422 (583063) - 823 seconds
+            //string sudoku = "000100038200005000000000000050000400400030000000700006001000050000060200060004000";//Vaste's #11. Depth - 725422 (583063) - 823 seconds (found another solution on http://www.sudoku-solutions.com/)
          
             Board.sw.Start();
             Board b = new Board();
@@ -424,10 +377,10 @@ namespace SudokuSolver
             Console.WriteLine("before:");
             Console.WriteLine(b.ToString());
             b.Solve(b);
-            //sw.Stop();
-            //Console.WriteLine("Recursion depth - {0}", Board.depth);
-            //Console.WriteLine("time - {0}mSEC", sw.ElapsedMilliseconds);
-            //Console.ReadKey();
+            Board.sw.Stop();
+            Console.WriteLine("Recursion depth - {0}", Board.depth);
+            Console.WriteLine("time - {0}mSEC", Board.sw.ElapsedMilliseconds);
+            Console.ReadKey();
         }
     }
 }

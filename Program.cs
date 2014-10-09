@@ -91,11 +91,8 @@ namespace SudokuSolver
             grids[x, y].Value = value;
             for (int i = 0; i < 9; i++)
             {
-                //if (this.grids[x, i].possibleValues.Contains(value))
                     grids[x, i].possibleValues.Remove(value);
-                //if (this.grids[i, y].possibleValues.Contains(value))
                     grids[i, y].possibleValues.Remove(value);
-                //if (this.gridToBlock[grids[x, y].Block][i].possibleValues.Contains(value))
                     gridToBlock[grids[x, y].Block][i].possibleValues.Remove(value);
             }     
             return this;
@@ -149,7 +146,7 @@ namespace SudokuSolver
         }
         
         private bool isValid()
-        //Checks if the board is in valid state - no two gris in one row, colomn or block
+        //Checks if the board is in valid state - no two grids in one row, column or block
         //has the same values. And also - if a grid doesn't have a value and has no possible values
         {
             string[] rows = new string[9];
@@ -189,7 +186,7 @@ namespace SudokuSolver
         private bool isPandigital(string s)
         {
             int[] digits = new int[10];
-            int n;
+            int n = 0;
             for (int i = 0; i < s.Length; i++)
             {
                 n = int.Parse(s.Substring(i,1));
@@ -231,6 +228,10 @@ namespace SudokuSolver
                     cols[g.Col] += s;
                     blocks[g.Block] += s;
                 }
+                else    //empty grid - the sudoku is !solved
+                {
+                    return false;
+                }
             }
             for (int i = 0; i < 9; i++)
             {
@@ -247,7 +248,7 @@ namespace SudokuSolver
             {
                 if (this.isSolved()) return state.SOLVED;
                 if (this.isValid()) return state.VALID;
-                else return state.BAD;
+                return state.BAD;
             }
         }
 
@@ -256,24 +257,21 @@ namespace SudokuSolver
             int m = 10;
             int row = 0;
             int col = 0;
-            Grid minGrid = new Grid(-1, -1);
             foreach (Grid g in this.grids)
             {              
-                //col = g.Col;
                 if ((g.possibleValues.Count < m) && (g.possibleValues.Count > 0))
                 {
                     m = g.possibleValues.Count;
                     row = g.Row;
                     col = g.Col; 
-                    if (m == 2) break;  //if m=2 we can't find smaller list, so return the answer
+                    if (m == 2) break;  //2 is the smallest list, so stop looking for smaller.
                 }
             }
             if (m <= 1)
-            {                
-                return minGrid;
+            {
+                return null;
             }
-            minGrid = new Grid(row, col, 0, grids[row, col].possibleValues);  
-            return minGrid;
+            return new Grid(row, col, 0, grids[row, col].possibleValues);
         }
 
         private static Board Copy(Board b)
@@ -325,7 +323,7 @@ namespace SudokuSolver
             else
             {
                 Grid g = minList();
-                if ((g.Col == -1) || (b.State == state.BAD))
+                if ((g == null) || (b.State == state.BAD))
                 {
                     return false;
                 }
@@ -363,10 +361,10 @@ namespace SudokuSolver
             //string sudoku = "000000010400000000020000000000050604008000300001090000300400200050100000000807000";//Vaste's #2. Depth - 1771
             //string sudoku = "000000012000035000000600070700000300000400800100000000000120000080000040050000600";//Vaste's #3. Depth - 6089
             //string sudoku = "000000012003600000000007000410020000000500300700000600280000040000300500000000000";//Vaste's #4. Depth - 1578
-            //string sudoku = "000000012008030000000000040120500000000004700060000000507000300000620000000100000";//Vaste's #5. Depth - 4702 (2623,9409,4703mS)
+            string sudoku = "000000012008030000000000040120500000000004700060000000507000300000620000000100000";//Vaste's #5. Depth - 4702 (2623,9409,4703mS)
             //string sudoku = "000000012040050000000009000070600400000100000000000050000087500601000300200000000";//Vaste's #6. Depth - 516
             //string sudoku = "000000012050400000000000030700600400001000000000080000920000800000510700000003000";//Vaste's #7. Depth - 5533
-            string sudoku = "000000012300000060000040000900000500000001070020000000000350400001400800060000000";//Vaste's #8. Depth - 11997 (was 33940)
+            //string sudoku = "000000012300000060000040000900000500000001070020000000000350400001400800060000000";//Vaste's #8. Depth - 11997 (was 33940)
             //string sudoku = "000000012400090000000000050070200000600000400000108000018000000000030700502000000";//Vaste's #9. Depth - 2097
             //string sudoku = "000000012500008000000700000600120000700000450000030000030000800000500700020000000";//Vaste's #10. Depth - 269
             //string sudoku = "000100038200005000000000000050000400400030000000700006001000050000060200060004000";//Vaste's #11. Depth - 725422 (583063) - 823 seconds (found another solution on http://www.sudoku-solutions.com/)
